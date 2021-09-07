@@ -1,7 +1,6 @@
 version: "3.7"
 services:
-    php:
-        container_name: desafio_php
+    app:
         build:
             args:
                 user: sammy
@@ -13,6 +12,8 @@ services:
         volumes:
             - ./:/var/www
             - ./docker/php/config/custom.ini:/usr/local/etc/php/conf.d/custom.ini
+        ports:
+            - "8000:8000" # Octane port
         networks:
             - app-network
 

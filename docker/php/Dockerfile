@@ -1,9 +1,5 @@
 FROM php:8-fpm
 
-# Arguments defined in docker-compose.yml
-ARG user
-ARG uid
-
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     openssl \
@@ -20,38 +16,26 @@ RUN apt-get update && apt-get install -y \
     unzip \
     libssl-dev \
     libc-client-dev \
-    libkrb5-dev
-
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+    libkrb5-dev \
+    supervisor
 
 # Install PHP extensions
-RUN docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
-    && docker-php-ext-install imap
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
-
-#RUN pecl install mongodb redis; \
-#    docker-php-ext-enable mongodb redis
-
-# Get latest Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-RUN npm config set unsafe-perm true
-RUN npm install
-
-# Create system user to run Composer and Artisan Commands
-RUN useradd -G www-data,root -u $uid -d /home/$user $user
-RUN mkdir -p /home/$user/.composer && \
-    chown -R $user:$user /home/$user
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
 # install swoole
 RUN apt-get install -y libssl-dev && yes | pecl install swoole && docker-php-ext-enable swoole.so;
 
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Enable and install node packages
+RUN npm config set unsafe-perm true
+RUN npm install
+
+# Added supervisor config
+COPY docker/php/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+
 # Set working directory
 WORKDIR /var/www
 
-USER $user
-
-RUN mkdir -p ~/.ssh && \
-    chown $user:$user ~/.ssh && \
-    chmod 0700 ~/.ssh
