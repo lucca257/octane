@@ -39,3 +39,4 @@ CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.con
 # Set working directory
 WORKDIR /var/www
 
+EXPOSE 5001
